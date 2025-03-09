@@ -1,0 +1,13 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#322F07",
+    "titleBar.activeBackground": "#46410A",
+    "titleBar.activeForeground": "#FCFAE8"
+  }
+}
