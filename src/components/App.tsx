@@ -1,7 +1,7 @@
 // @ts-nocheck
 import Avatar from 'components/Avatar'
 import logo from 'assets/logo.svg'
-
+import remarkGfm from "remark-gfm";
 import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { FiSend, FiTrash2, FiMenu, FiX, FiSettings, FiSquare } from "react-icons/fi";
@@ -112,22 +112,30 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave }) => {
   );
 };
 
-const MessageActions = ({ message, onRegenerate, onEdit, isEditing, setIsEditing, editedContent, setEditedContent, onSaveEdit }) => {
+const MessageActions = ({ message, onRegenerate, onEdit, isEditing, setIsEditing, editedContent, setEditedContent, onSaveEdit, isLongMessage, isExpanded, toggleExpand  }) => {
   if (message.type === "user") {
     return (
       <div className="flex gap-2 mt-2">
-        <button
+        {/* <button
           onClick={() => setIsEditing(true)}
           className="text-gray-400 hover:text-white text-sm"
         >
           Edit
-        </button>
+        </button> */}
         <button
           onClick={onRegenerate}
           className="text-gray-400 hover:text-white text-sm"
         >
           Regenerate
         </button>
+        {isLongMessage && (
+                  <button
+                    onClick={toggleExpand}
+                     className="text-gray-400 hover:text-white text-sm"
+                  >
+                    {isExpanded ? "Show less" : "Show more"}
+                  </button>
+                )}
       </div>
     );
   }
@@ -430,9 +438,39 @@ const ChatInterface = () => {
   const MessageItem = ({ message, index }) => {
     const isAI = message.type === "ai";
     const [copyStatuses, setCopyStatuses] = useState({});
-    
+    const [isExpanded, setIsExpanded] = useState(false);
+  
+    // Function to toggle the expanded state
+    const toggleExpand = () => {
+      setIsExpanded(!isExpanded);
+    };
+
+    const copyToClipboard = (text, blockId) => {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopyStatuses(prev => ({
+          ...prev,
+          [blockId]: "Copied!"
+        }));
+        setTimeout(() => {
+          setCopyStatuses(prev => ({
+            ...prev,
+            [blockId]: null
+          }));
+        }, 2000); // Reset the status after 2 seconds
+      }).catch(err => {
+        console.error('Failed to copy text: ', err);
+        setCopyStatuses(prev => ({
+          ...prev,
+          [blockId]: "Failed to copy"
+        }));
+      });
+    };
+  
+    // Determine if the message is too long (e.g., more than 5 lines)
+    const isLongMessage = message.content.split("\n").length > 3;
+  
     return (
-      <div className={`flex w-full ${isAI ? "bg-[#444654]" : "bg-[#343541]"} p-4 rounded-lg mb-4`}>
+      <div className={`flex w-full ${isAI ? "bg-[#525899]" : "bg-[#444654]"} p-4 rounded-lg mb-4`}>
         <div className="flex-shrink-0 mr-4">
           {isAI ? (
             <BiBot className="w-6 h-6 text-green-500" />
@@ -463,47 +501,83 @@ const ChatInterface = () => {
                   Cancel
                 </button>
               </div>
-            ) : isAI ? (
-              <ReactMarkdown
-                components={{
-                  code({ node, inline, className, children, ...props }) {
-                    const match = /language-(\w+)/.exec(className || "");
-                    const blockId = Math.random().toString(36).substr(2, 9);
-                    return !inline ? (
-                      <div className="relative">
-                        <button
-                          onClick={() => copyToClipboard(String(children), blockId)}
-                          className={`absolute top-2 right-2 ${copyStatuses[blockId] ? "bg-green-600" : "bg-gray-700 hover:bg-gray-600"} text-white px-2 py-1 rounded text-sm transition-colors duration-200`}
-                        >
-                          {copyStatuses[blockId] || "Copy"}
-                        </button>
-                        <pre className="rounded-lg bg-gray-800 p-4 overflow-x-auto">
-                          <code className={className} {...props}>
-                            {children}
-                          </code>
-                        </pre>
-                      </div>
-                    ) : (
-                      <code className="bg-gray-800 rounded-md px-1 py-0.5" {...props}>
-                        {children}
-                      </code>
-                    );
-                  },
-                  ul({ node, ...props }) {
-                    return <ul className="list-disc list-inside space-y-1 my-2" {...props} />;
-                  },
-                  ol({ node, ...props }) {
-                    return <ol className="list-decimal list-inside space-y-1 my-2" {...props} />;
-                  },
-                  li({ node, ...props }) {
-                    return <li className="text-gray-200" {...props} />;
-                  }
-                }}
-              >
-                {message.content}
-              </ReactMarkdown>
             ) : (
-              <p>{message.content}</p>
+              <div className={`${!isAI && isLongMessage && !isExpanded ? "max-h-24 overflow-hidden" : ""}`}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    code({ node, inline, className, children, ...props }) {
+                      const match = /language-(\w+)/.exec(className || "");
+                      const blockId = Math.random().toString(36).substr(2, 9);
+                      const isCodeBlockWithoutLangugue = String(children).includes("\n");
+                      const isCodeBlock = match && isCodeBlockWithoutLangugue;
+                      if (isCodeBlock || isCodeBlockWithoutLangugue) {
+                        return (
+                          <div className="relative">
+                            <button
+                              onClick={() => copyToClipboard(String(children), blockId)}
+                              className={`absolute top-2 right-2 ${
+                                copyStatuses[blockId] ? "bg-green-600" : "bg-gray-700 hover:bg-gray-600"
+                              } text-white px-2 py-1 rounded text-sm transition-colors duration-200`}
+                            >
+                              {copyStatuses[blockId] || "Copy"}
+                            </button>
+                            <pre className="rounded-lg bg-gray-800 p-4 overflow-x-auto mb-4">
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
+                            </pre>
+                          </div>
+                        );
+                      }
+                      return (
+                        <code className="max-w-fit bg-gray-800 rounded-md px-1 py-0.5 text-gray-200" {...props}>
+                          {children}
+                        </code>
+                      );
+                    },
+                    ul({ node, ...props }) {
+                      return <ul className="list-disc list-inside space-y-1 my-2" {...props} />;
+                    },
+                    ol({ node, ...props }) {
+                      return <ol className="list-decimal list-inside space-y-1 my-2" {...props} />;
+                    },
+                    li({ node, ...props }) {
+                      return <li className="text-gray-200" {...props} />;
+                    },
+                    table({ node, ...props }) {
+                      return <table className="min-w-full bg-gray-800 text-gray-200 border-collapse" {...props} />;
+                    },
+                    thead({ node, ...props }) {
+                      return <thead className="bg-gray-700" {...props} />;
+                    },
+                    tbody({ node, ...props }) {
+                      return <tbody {...props} />;
+                    },
+                    tr({ node, ...props }) {
+                      return <tr className="border-b border-gray-600" {...props} />;
+                    },
+                    th({ node, ...props }) {
+                      return (
+                        <th
+                          className="px-4 py-2 text-left font-semibold text-gray-300 uppercase tracking-wider"
+                          {...props}
+                        />
+                      );
+                    },
+                    td({ node, ...props }) {
+                      return <td className="px-4 py-2" {...props} />;
+                    },
+                    p({ node, ...props }) {
+                      // Return the children directly without wrapping them in a <p> tag
+                      return <span>{props.children}</span>;
+                    },
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
+                
+              </div>
             )}
           </div>
           <div className="text-xs text-gray-400 mt-2 text-right">
@@ -517,13 +591,15 @@ const ChatInterface = () => {
             setIsEditing={setEditingMessageId}
             editedContent={editedContent}
             setEditedContent={setEditedContent}
+            isLongMessage={isLongMessage}
+            isExpanded={isExpanded}
+            toggleExpand={() => toggleExpand(index)}
             onSaveEdit={() => handleSaveEdit(index)}
           />
         </div>
       </div>
     );
   };
-
   return (
     <div className="flex h-screen bg-[#202123]">
       <Sidebar 
@@ -609,14 +685,13 @@ const ChatInterface = () => {
               <FiTrash2 className="w-6 h-6" />
             </button>
             <form onSubmit={handleSubmit} className="flex-1 flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your message here..."
-                className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                aria-label="Message input"
-              />
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your message here..."
+              className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              aria-label="Message input"
+            />
               {isLoading ? (
                 <button
                   onClick={handleStop}
