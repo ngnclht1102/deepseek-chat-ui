@@ -1,6 +1,9 @@
 ### DeepSeek && ChatGPT Clone with Tailwind CSS
 A modern, responsive chat interface inspired by DeepSeek, built using React, Tailwind CSS, and the DeepSeek, OpenAI API. This project supports Markdown rendering, streaming responses, and persistent chat history using local storage.
 ### Demo
+
+Live version https://67dc1b37aebdab1d5e7ebc49--cozy-biscotti-3f96f8.netlify.app/
+
 ![ChatGPT Clone Demo](https://raw.githubusercontent.com/ngnclht1102/deepseek-chat-ui/main/demo/demo.gif)
 
 The demo showcases the chat interface, streaming responses, Markdown rendering, and persistent chat history.
