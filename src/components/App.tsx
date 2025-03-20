@@ -1,10 +1,11 @@
 // @ts-nocheck
+import "./styles.css"
 import Avatar from 'components/Avatar'
 import logo from 'assets/logo.svg'
 import remarkGfm from "remark-gfm";
 import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { FiSend, FiTrash2, FiMenu, FiX, FiSettings, FiSquare } from "react-icons/fi";
+import { FiSend, FiTrash2, FiMenu, FiX, FiSettings, FiSquare, FiEdit, FiRefreshCcw,  FiChevronUp, FiChevronDown } from "react-icons/fi";
 import { BiBot } from "react-icons/bi";
 import { FaUser } from "react-icons/fa";
 
@@ -48,15 +49,12 @@ const Sidebar = ({ isOpen, onClose, chats, currentChatId, onChatSelect, onRemove
 
 const SettingsModal = ({ isOpen, onClose, settings, onSave }) => {
   const [formData, setFormData] = useState(settings);
-
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
     onClose();
   };
-
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
       <div className="bg-[#2D2D2D] p-6 rounded-lg w-96">
@@ -112,34 +110,106 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave }) => {
   );
 };
 
-const MessageActions = ({ message, onRegenerate, onEdit, isEditing, setIsEditing, editedContent, setEditedContent, onSaveEdit, isLongMessage, isExpanded, toggleExpand  }) => {
-  if (message.type === "user") {
-    return (
-      <div className="flex gap-2 mt-2">
-        {/* <button
-          onClick={() => setIsEditing(true)}
-          className="text-gray-400 hover:text-white text-sm"
-        >
-          Edit
-        </button> */}
-        <button
-          onClick={onRegenerate}
-          className="text-gray-400 hover:text-white text-sm"
-        >
-          Regenerate
-        </button>
-        {isLongMessage && (
-                  <button
-                    onClick={toggleExpand}
-                     className="text-gray-400 hover:text-white text-sm"
-                  >
-                    {isExpanded ? "Show less" : "Show more"}
-                  </button>
-                )}
+// New Modal Component for System Role Input
+const SystemRoleModal = ({ isOpen, onClose, onCreateChat }) => {
+  const [systemRole, setSystemRole] = useState("You are an AI assistant specializing in banking and insurance software engineering, with expertise in React Native, Snyk Security, vulnerability management, SonarQube, SCA, SCST, GraphQL, RESTful APIs, and Java. Your role is to guide engineers in building secure, scalable, and compliant systems for financial and insurance platforms. You assist in identifying vulnerabilities, implementing security best practices, and optimizing code quality using tools like Snyk and SonarQube. You provide insights into regulatory compliance, risk mitigation, and technology trends shaping the industry. With a strong focus on mobile app development (React Native) and API integrations (GraphQL/REST), you help design solutions that meet business needs while ensuring data protection. You support engineers in adopting Software Composition Analysis (SCA) and Supply Chain Security Tools (SCST) to safeguard applications. Your goal is to ensure robust, secure, and efficient systems that align with banking and insurance standards. You offer actionable advice on Java-based architectures and modern development practices. You empower teams to deliver high-quality software with reduced risks and enhanced performance.");
+
+  const handleSubmit = () => {
+    if (systemRole.trim()) {
+      onCreateChat(systemRole);
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="bg-[#2D2D2D] p-6 rounded-lg w-96">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-white text-xl font-bold">Set System Role</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <FiX className="w-6 h-6" />
+          </button>
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
+          <div>
+            <label className="block text-white mb-2">System Role</label>
+            <textarea
+              value={systemRole}
+              onChange={(e) => setSystemRole(e.target.value)}
+              className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="Enter system role..."
+              rows={4}
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-green-500 text-white rounded-lg px-4 py-2 hover:bg-green-600 transition-colors"
+          >
+            Create Chat
+          </button>
+        </form>
       </div>
-    );
-  }
-  return null;
+    </div>
+  );
+};
+
+const MessageActions = ({ isAI, isLoading, message, onRegenerate, onEdit, isEditing, setIsEditing, editedContent, setEditedContent, onSaveEdit, isLongMessage, isExpanded, toggleExpand, handleDeleteMessage }) => {
+  
+  return (
+    <div className="flex gap-2 mt-2">
+      {isAI && !isLoading && (
+        <>
+          {/* Edit Button */}
+          {/* <button
+            onClick={() => setIsEditing(true)}
+            className="text-gray-400 hover:text-white text-sm flex items-center gap-1"
+          >
+            <FiEdit className="w-4 h-4" /> 
+            Edit
+          </button> */}
+          {/* Regenerate Button */}
+          <button
+            onClick={onRegenerate}
+            className="text-gray-400 hover:text-white text-sm flex items-center gap-1"
+          >
+            <FiRefreshCcw className="w-4 h-4" /> {/* Regenerate Icon */}
+            Regenerate
+          </button>
+        </>
+      )}
+      {/* Delete Button */}
+      {((isAI && !isLoading) || !isAI) && ( <button
+        onClick={handleDeleteMessage}
+        className="text-gray-400 hover:text-red-500 text-sm flex items-center gap-1"
+      >
+        <FiTrash2 className="w-4 h-4" /> {/* Delete Icon */}
+        Delete
+      </button>)}
+      {isLongMessage && (
+        <button
+          onClick={toggleExpand}
+          className="text-gray-400 hover:text-white text-sm flex items-center gap-1"
+        >
+          {isExpanded ? (
+            <>
+              <FiChevronUp className="w-4 h-4" /> {/* Show Less Icon */}
+              Show less
+            </>
+          ) : (
+            <>
+              <FiChevronDown className="w-4 h-4" /> {/* Show More Icon */}
+              Show more
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
 };
 
 const ChatInterface = () => {
@@ -166,11 +236,27 @@ const ChatInterface = () => {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editedContent, setEditedContent] = useState("");
 
+  // State for the System Role Modal
+  const [isSystemRoleModalOpen, setIsSystemRoleModalOpen] = useState(false);
+
+  const handleDeleteMessage = (messageIndex) => {
+    console.log("======handleDeleteMessage", messageIndex)
+    setChats(prev => ({
+      ...prev,
+      [currentChatId]: {
+        ...prev[currentChatId],
+        messages: prev[currentChatId]?.messages.filter((_, idx) => idx !== messageIndex)
+      }
+    }));
+  };
+
   const callDeepseekAPI = async (userMessage, onPartialResponse) => {
+    setTimeout(() => {
+      scrollToBottom();
+    }, 2000);
     setIsLoading(true);
     const controller = new AbortController();
     setAbortController(controller);
-
     try {
       const response = await fetch(settings.apiBase || "https://api.deepseek.com/chat/completions", {
         method: "POST",
@@ -181,34 +267,32 @@ const ChatInterface = () => {
         body: JSON.stringify({
           model: settings.model,
           messages: [
-            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "system", "content": chats[currentChatId]?.systemRole || "You are a helpful assistant."},
+            ...(chats[currentChatId]?.messages || []).map(msg => ({
+              role: msg.type === "user" ? "user" : "assistant",
+              content: msg.content
+            })),
             {"role": "user", "content": userMessage}
           ],
           stream: true
         }),
         signal: controller.signal
       });
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let fullResponse = "";
-
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        
         const chunk = decoder.decode(value);
         const lines = chunk.split("\n").filter(line => line.trim() !== "");
-        
         for (const line of lines) {
           if (line.startsWith("data: ")) {
             const data = line.slice(6);
             if (data === "[DONE]") continue;
-            
             try {
               const parsed = JSON.parse(data);
               const content = parsed.choices[0]?.delta?.content || "";
@@ -222,7 +306,6 @@ const ChatInterface = () => {
           }
         }
       }
-      
       return fullResponse;
     } catch (error) {
       if (error.name === "AbortError") {
@@ -243,14 +326,15 @@ const ChatInterface = () => {
     }
   };
 
-  const createNewChat = () => {
+  const createNewChat = (systemRole) => {
     const newChatId = Date.now().toString();
     setChats(prev => ({
       ...prev,
       [newChatId]: {
         messages: [],
         createdAt: new Date().toISOString(),
-        name: "Untitled Chat"
+        name: "Untitled Chat",
+        systemRole: systemRole || "You are a helpful assistant."
       }
     }));
     setCurrentChatId(newChatId);
@@ -263,18 +347,17 @@ const ChatInterface = () => {
 
   useEffect(() => {
     localStorage.setItem("chats", JSON.stringify(chats));
-    scrollToBottom();
-    
   }, [chats, currentChatId]);
+
   useEffect(() => {
     if (Object.keys(chats).length == 0) {
-      createNewChat()  
+      createNewChat();
     }
   }, [chats]);
 
   useEffect(() => {
     scrollToBottom();
-  }, []);
+  }, [currentChatId]);
 
   const [settings, setSettings] = useState(() => {
     const saved = localStorage.getItem("settings");
@@ -292,13 +375,11 @@ const ChatInterface = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
-
     const userMessage = {
       type: "user",
       content: input,
       timestamp: new Date().toISOString(),
     };
-
     setChats(prev => ({
       ...prev,
       [currentChatId]: {
@@ -308,13 +389,11 @@ const ChatInterface = () => {
       }
     }));
     setInput("");
-
     const aiMessage = {
       type: "ai",
       content: "",
       timestamp: new Date().toISOString(),
     };
-
     setChats(prev => ({
       ...prev,
       [currentChatId]: {
@@ -322,7 +401,6 @@ const ChatInterface = () => {
         messages: [...prev[currentChatId]?.messages, aiMessage]
       }
     }));
-
     const finalResponse = await callDeepseekAPI(input, (partialResponse) => {
       setChats(prev => ({
         ...prev,
@@ -336,7 +414,6 @@ const ChatInterface = () => {
         }
       }));
     });
-
     setChats(prev => ({
       ...prev,
       [currentChatId]: {
@@ -362,7 +439,6 @@ const ChatInterface = () => {
   const handleRegenerate = async (messageIndex) => {
     const messages = chats[currentChatId].messages;
     const userMessage = messages[messageIndex];
-    
     setChats(prev => ({
       ...prev,
       [currentChatId]: {
@@ -370,13 +446,11 @@ const ChatInterface = () => {
         messages: messages.slice(0, messageIndex + 1)
       }
     }));
-
     const aiMessage = {
       type: "ai",
       content: "",
       timestamp: new Date().toISOString(),
     };
-
     setChats(prev => ({
       ...prev,
       [currentChatId]: {
@@ -384,7 +458,6 @@ const ChatInterface = () => {
         messages: [...prev[currentChatId]?.messages, aiMessage]
       }
     }));
-
     const finalResponse = await callDeepseekAPI(userMessage.content, (partialResponse) => {
       setChats(prev => ({
         ...prev,
@@ -398,7 +471,6 @@ const ChatInterface = () => {
         }
       }));
     });
-
     setChats(prev => ({
       ...prev,
       [currentChatId]: {
@@ -435,16 +507,14 @@ const ChatInterface = () => {
     handleRegenerate(messageIndex);
   };
 
-  const MessageItem = ({ message, index }) => {
+  const MessageItem = ({ message, index, isLoading }) => {
     const isAI = message.type === "ai";
     const [copyStatuses, setCopyStatuses] = useState({});
     const [isExpanded, setIsExpanded] = useState(false);
-  
     // Function to toggle the expanded state
     const toggleExpand = () => {
       setIsExpanded(!isExpanded);
     };
-
     const copyToClipboard = (text, blockId) => {
       navigator.clipboard.writeText(text).then(() => {
         setCopyStatuses(prev => ({
@@ -465,12 +535,12 @@ const ChatInterface = () => {
         }));
       });
     };
-  
     // Determine if the message is too long (e.g., more than 5 lines)
     const isLongMessage = message.content.split("\n").length > 3;
-  
     return (
-      <div className={`flex w-full ${isAI ? "bg-[#525899]" : "bg-[#444654]"} p-4 rounded-lg mb-4`}>
+      <div className={`flex w-full ${isAI ? "bg-[#525899]" : "bg-[#444654]"} p-4 rounded-lg mb-4`}
+      // style={{ maxWidth: "90%", width: "100%", overflowX: "auto" }}
+      >
         <div className="flex-shrink-0 mr-4">
           {isAI ? (
             <BiBot className="w-6 h-6 text-green-500" />
@@ -479,7 +549,7 @@ const ChatInterface = () => {
           )}
         </div>
         <div className="flex-grow text-gray-50">
-          <div className="prose prose-invert max-w-none">
+          <div className={`prose prose-invert max-w-none ${isLongMessage && !isExpanded ? "max-h-24 overflow-hidden" : ""}`}>
             {editingMessageId === index ? (
               <div className="flex gap-2">
                 <input
@@ -501,8 +571,8 @@ const ChatInterface = () => {
                   Cancel
                 </button>
               </div>
-            ) : (
-              <div className={`${!isAI && isLongMessage && !isExpanded ? "max-h-24 overflow-hidden" : ""}`}>
+            ) : isAI ? (
+              <div>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
@@ -513,7 +583,7 @@ const ChatInterface = () => {
                       const isCodeBlock = match && isCodeBlockWithoutLangugue;
                       if (isCodeBlock || isCodeBlockWithoutLangugue) {
                         return (
-                          <div className="relative">
+                          <div className="code-container relative">
                             <button
                               onClick={() => copyToClipboard(String(children), blockId)}
                               className={`absolute top-2 right-2 ${
@@ -522,18 +592,19 @@ const ChatInterface = () => {
                             >
                               {copyStatuses[blockId] || "Copy"}
                             </button>
-                            <pre className="rounded-lg bg-gray-800 p-4 overflow-x-auto mb-4">
-                              <code className={className} {...props}>
+                            <pre className="rounded-lg bg-gray-800 p-4 overflow-x-auto mb-4 ">
+                              <code className={`${className} max-w-fit`} {...props}>
                                 {children}
                               </code>
                             </pre>
                           </div>
                         );
                       }
+                      // inline
                       return (
-                        <code className="max-w-fit bg-gray-800 rounded-md px-1 py-0.5 text-gray-200" {...props}>
-                          {children}
-                        </code>
+                          <code className="max-w-fit bg-gray-800 rounded-md px-1 py-0.5 text-gray-200" {...props}>
+                            {children}
+                          </code>
                       );
                     },
                     ul({ node, ...props }) {
@@ -576,16 +647,14 @@ const ChatInterface = () => {
                 >
                   {message.content}
                 </ReactMarkdown>
-                
               </div>
-            )}
+            ) : <div>{message.content}</div>}
           </div>
           <div className="text-xs text-gray-400 mt-2 text-right">
             {new Date(message.timestamp).toLocaleTimeString()}
-          </div>
           <MessageActions
             message={message}
-            onRegenerate={() => handleRegenerate(index)}
+            onRegenerate={() => handleRegenerate(index - 1)}
             onEdit={() => handleEditMessage(index)}
             isEditing={editingMessageId === index}
             setIsEditing={setEditingMessageId}
@@ -595,11 +664,16 @@ const ChatInterface = () => {
             isExpanded={isExpanded}
             toggleExpand={() => toggleExpand(index)}
             onSaveEdit={() => handleSaveEdit(index)}
+            handleDeleteMessage={() => handleDeleteMessage(index)}
+            isLoading={isLoading}
+            isAI={isAI}
           />
+          </div>
         </div>
       </div>
     );
   };
+
   return (
     <div className="flex h-screen bg-[#202123]">
       <Sidebar 
@@ -622,21 +696,25 @@ const ChatInterface = () => {
           }
         }}
       />
-      
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
         onSave={setSettings}
       />
-
+      <SystemRoleModal
+        isOpen={isSystemRoleModalOpen}
+        onClose={() => setIsSystemRoleModalOpen(false)}
+        onCreateChat={(systemRole) => {
+          createNewChat(systemRole);
+        }}
+      />
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
-
       <div className="flex flex-col flex-1">
         <div className="border-b border-gray-700 p-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -656,16 +734,15 @@ const ChatInterface = () => {
             </button>
           </div>
           <button
-            onClick={createNewChat}
+            onClick={() => setIsSystemRoleModalOpen(true)}
             className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
           >
             New Chat
           </button>
         </div>
-
         <div className="flex-1 overflow-y-auto p-4" role="log" aria-label="Chat history">
           {chats[currentChatId]?.messages.map((message, index) => (
-            <MessageItem key={index} message={message} index={index} />
+            <MessageItem key={index} message={message} index={index} isLoading={isLoading} />
           ))}
           {isLoading && (
             <div className="flex items-center justify-center py-4">
@@ -674,7 +751,6 @@ const ChatInterface = () => {
           )}
           <div ref={messagesEndRef} />
         </div>
-
         <div className="border-t border-gray-700 p-4">
           <div className="max-w-4xl mx-auto flex gap-4">
             <button
