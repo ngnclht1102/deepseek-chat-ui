@@ -1,5 +1,6 @@
 // @ts-nocheck
 import "./styles.css"
+import { CopyBlock, dracula } from 'react-code-blocks';
 import Avatar from 'components/Avatar'
 import logo from 'assets/logo.svg'
 import remarkGfm from "remark-gfm";
@@ -161,7 +162,10 @@ const SystemRoleModal = ({ isOpen, onClose, onCreateChat }) => {
 const MessageActions = ({ isAI, isLoading, message, onRegenerate, onEdit, isEditing, setIsEditing, editedContent, setEditedContent, onSaveEdit, isLongMessage, isExpanded, toggleExpand, handleDeleteMessage }) => {
   
   return (
-    <div className="flex gap-2 mt-2">
+    
+    <div className="flex justify-between">
+      <div></div>
+      <div className="flex gap-2 mt-2">
       {isAI && !isLoading && (
         <>
           {/* Edit Button */}
@@ -190,7 +194,7 @@ const MessageActions = ({ isAI, isLoading, message, onRegenerate, onEdit, isEdit
         <FiTrash2 className="w-4 h-4" /> {/* Delete Icon */}
         Delete
       </button>)}
-      {isLongMessage && (
+      {isLongMessage && !isLoading && (
         <button
           onClick={toggleExpand}
           className="text-gray-400 hover:text-white text-sm flex items-center gap-1"
@@ -208,6 +212,9 @@ const MessageActions = ({ isAI, isLoading, message, onRegenerate, onEdit, isEdit
           )}
         </button>
       )}
+
+      
+      </div>
     </div>
   );
 };
@@ -510,7 +517,7 @@ const ChatInterface = () => {
   const MessageItem = ({ message, index, isLoading }) => {
     const isAI = message.type === "ai";
     const [copyStatuses, setCopyStatuses] = useState({});
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
     // Function to toggle the expanded state
     const toggleExpand = () => {
       setIsExpanded(!isExpanded);
@@ -581,23 +588,19 @@ const ChatInterface = () => {
                       const blockId = Math.random().toString(36).substr(2, 9);
                       const isCodeBlockWithoutLangugue = String(children).includes("\n");
                       const isCodeBlock = match && isCodeBlockWithoutLangugue;
+                      const lang = className?.split("-")?.[1]
                       if (isCodeBlock || isCodeBlockWithoutLangugue) {
                         return (
-                          <div className="code-container relative">
-                            <button
-                              onClick={() => copyToClipboard(String(children), blockId)}
-                              className={`absolute top-2 right-2 ${
-                                copyStatuses[blockId] ? "bg-green-600" : "bg-gray-700 hover:bg-gray-600"
-                              } text-white px-2 py-1 rounded text-sm transition-colors duration-200`}
-                            >
-                              {copyStatuses[blockId] || "Copy"}
-                            </button>
-                            <pre className="rounded-lg bg-gray-800 p-4 overflow-x-auto mb-4 ">
-                              <code className={`${className} max-w-fit`} {...props}>
-                                {children}
-                              </code>
+                            <pre>
+                              <CopyBlock
+                                text={children}
+                                language={lang}
+                                showLineNumbers={true}
+                                wrapLines
+                                wrapLongLines
+                                theme={dracula}
+                              />
                             </pre>
-                          </div>
                         );
                       }
                       // inline
